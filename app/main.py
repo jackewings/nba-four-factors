@@ -1,133 +1,310 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import statsmodels.api as sm
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score, precision_score, recall_score, confusion_matrix
+
+from utils.data import load_teams_14_23, load_teams_24
+from utils.plots import plot_team_bar
+
 
 st.set_page_config(page_title="NBA Four Factors Analysis", layout="wide")
 
 
-# --- Load Clean Processed Data ---
-@st.cache_data
-def load_teams_14_23():
-    return pd.read_csv("data/processed/teams_14_23.csv")
-
-@st.cache_data
-def load_teams_24():
-    return pd.read_csv("data/processed/teams_24.csv")
+st.title("NBA Four Factors Analysis")
+st.caption("A portfolio project exploring how the Four Factors relate to wins and playoff success (2014–2024).")
 
 teams_14_23 = load_teams_14_23()
 teams_24 = load_teams_24()
 
 # --- Tabs ---
-tab1, tab2, tab3 = st.tabs(["Dashboard", "Writeup", "Notebook"])
+tab1, tab2, tab3 = st.tabs([
+    "Background & Visuals",
+    "Project Walkthrough",
+    "More & Contact"
+])
 
+# --- Tab 1: Background & Visuals ---
 with tab1:
-    st.title("NBA Four Factors: Dashboard")
-    st.write("Explore the relationship between the Four Factors and team success in the NBA (2014-2024).")
+    st.title("NBA Four Factors: Background & Exploratory Visuals")
+    st.markdown(
+        """
+**What are the Four Factors?**
 
-    viz = st.selectbox(
-        "Select a visualization:",
-        [
-            "Average Wins per Team",
-            "Average EFG% per Team",
-            "Average Turnover% per Team",
-            "Average Offensive Rebound% per Team",
-            "Average Free Throw Rate per Team",
-            "Confusion Matrix (Playoff Prediction)"
-        ]
+The NBA Four Factors are a set of team-level statistics commonly used in basketball analytics to explain *why* teams win:
+
+- **Effective Field Goal Percentage (eFG%)**: Adjusts FG% to account for the added value of 3-point shots.
+- **Turnover Percentage (TOV%)**: Percent of possessions that end in a turnover (lower is better).
+- **Offensive Rebound Percentage (ORB%)**: Percent of available offensive rebounds a team gets.
+- **Free Throw Rate (FT/FGA)**: Free throws made per 100 field goal attempts.
+
+**What inspired this project**
+
+I wanted a portfolio project that combines sports + statistics and answers a real “basketball analytics” question with measurable evidence.
+
+**Main goal**
+
+Use modern NBA team data (2014–2023) to test whether the Four Factors are statistically significant predictors of:
+
+- Regular-season wins (regression)
+- Playoff appearance (classification)
+"""
     )
 
-    if viz == "Average Wins per Team":
-        teams_avg_wins = teams_14_23.groupby("abbreviation")["w"].mean().sort_values(ascending=False).reset_index()
-        fig, ax = plt.subplots(figsize=(12, 4))
-        sns.barplot(data=teams_avg_wins, x="abbreviation", y="w", palette="coolwarm_r", ax=ax)
-        ax.set_ylim(25, 55)
-        ax.set_title("Average Wins per Season by Team")
-        st.pyplot(fig)
+    st.caption("Charts use team-season data from the 2014–2023 seasons and show averages by team.")
 
-    elif viz == "Average EFG% per Team":
-        teams_avg_efg = teams_14_23.groupby("abbreviation")["e_fg_percent"].mean().sort_values(ascending=False).reset_index()
-        fig, ax = plt.subplots(figsize=(12, 4))
-        sns.barplot(data=teams_avg_efg, x="abbreviation", y="e_fg_percent", palette="coolwarm_r", ax=ax)
-        ax.set_ylim(48, 55)
-        ax.set_title("Average EFG% by Team")
-        st.pyplot(fig)
+    selected_chart = st.selectbox(
+        "Select a chart",
+        [
+            "Average wins (2014–2023)",
+            "Average eFG% (2014–2023)",
+            "Average TOV% (2014–2023)",
+            "Average ORB% (2014–2023)",
+            "Average FT/FGA (2014–2023)",
+        ],
+    )
 
-    elif viz == "Average Turnover% per Team":
-        teams_avg_tov = teams_14_23.groupby("abbreviation")["tov_percent"].mean().sort_values(ascending=True).reset_index()
-        fig, ax = plt.subplots(figsize=(12, 4))
-        sns.barplot(data=teams_avg_tov, x="abbreviation", y="tov_percent", palette="coolwarm_r", ax=ax)
-        ax.set_ylim(11, 14)
-        ax.set_title("Average Turnover% by Team")
-        st.pyplot(fig)
+    if selected_chart == "Average wins (2014–2023)":
+        st.subheader("Average wins by team")
+        st.pyplot(
+            plot_team_bar(
+                teams_14_23,
+                value_col="w",
+                title="Average Regular-Season Wins by Team (2014–2023)",
+                y_label="Average wins",
+                y_lim=(25, 55),
+                sort_ascending=False,
+            )
+        )
 
-    elif viz == "Average Offensive Rebound% per Team":
-        teams_avg_orb = teams_14_23.groupby("abbreviation")["orb_percent"].mean().sort_values(ascending=False).reset_index()
-        fig, ax = plt.subplots(figsize=(12, 4))
-        sns.barplot(data=teams_avg_orb, x="abbreviation", y="orb_percent", palette="coolwarm_r", ax=ax)
-        ax.set_ylim(20, 26)
-        ax.set_title("Average Offensive Rebound% by Team")
-        st.pyplot(fig)
+    elif selected_chart == "Average eFG% (2014–2023)":
+        st.subheader("Average eFG% by team")
+        st.pyplot(
+            plot_team_bar(
+                teams_14_23,
+                value_col="e_fg_percent",
+                title="Average Effective Field Goal Percentage (eFG%) by Team (2014–2023)",
+                y_label="Average eFG%",
+                y_lim=(48, 55),
+                sort_ascending=False,
+            )
+        )
 
-    elif viz == "Average Free Throw Rate per Team":
-        teams_avg_ftr = teams_14_23.groupby("abbreviation")["ft_fga"].mean().sort_values(ascending=False).reset_index()
-        fig, ax = plt.subplots(figsize=(12, 4))
-        sns.barplot(data=teams_avg_ftr, x="abbreviation", y="ft_fga", palette="coolwarm_r", ax=ax)
-        ax.set_ylim(18, 23)
-        ax.set_title("Average Free Throw Rate by Team")
-        st.pyplot(fig)
+    elif selected_chart == "Average TOV% (2014–2023)":
+        st.subheader("Average TOV% by team")
+        st.pyplot(
+            plot_team_bar(
+                teams_14_23,
+                value_col="tov_percent",
+                title="Average Turnover Percentage (TOV%) by Team (2014–2023)",
+                y_label="Average TOV%",
+                y_lim=(11, 14),
+                sort_ascending=True,
+            )
+        )
 
-    elif viz == "Confusion Matrix (Playoff Prediction)":
-        # Logistic regression model
-        X = teams_14_23[["e_fg_percent", "tov_percent", "orb_percent", "ft_fga"]]
-        X = sm.add_constant(X)
-        y = teams_14_23["playoffs"]
-        logit = sm.Logit(y, X).fit(disp=0)
-        X_test = teams_24[["e_fg_percent", "tov_percent", "orb_percent", "ft_fga"]]
-        X_test = sm.add_constant(X_test)
-        y_test = teams_24["playoffs"]
-        y_pred_probs = logit.predict(X_test)
-        y_pred_classes = np.where(y_pred_probs > 0.8, 1, 0)
-        conf_mat = confusion_matrix(y_test, y_pred_classes)
-        fig, ax = plt.subplots()
-        sns.heatmap(conf_mat, annot=True, fmt="d", cmap="Blues", xticklabels=["No Playoffs", "Playoffs"], yticklabels=["No Playoffs", "Playoffs"], ax=ax)
-        ax.set_title("Confusion Matrix for Playoff Prediction (2024)")
-        ax.set_ylabel("Actual")
-        ax.set_xlabel("Predicted")
-        st.pyplot(fig)
-        st.write(f"Accuracy: {accuracy_score(y_test, y_pred_classes):.2f}")
-        st.write(f"Precision: {precision_score(y_test, y_pred_classes):.2f}")
-        st.write(f"Recall: {recall_score(y_test, y_pred_classes):.2f}")
+    elif selected_chart == "Average ORB% (2014–2023)":
+        st.subheader("Average ORB% by team")
+        st.pyplot(
+            plot_team_bar(
+                teams_14_23,
+                value_col="orb_percent",
+                title="Average Offensive Rebound Percentage (ORB%) by Team (2014–2023)",
+                y_label="Average ORB%",
+                y_lim=(20, 26),
+                sort_ascending=False,
+            )
+        )
 
+    elif selected_chart == "Average FT/FGA (2014–2023)":
+        st.subheader("Average FT/FGA by team")
+        st.pyplot(
+            plot_team_bar(
+                teams_14_23,
+                value_col="ft_fga",
+                title="Average Free Throw Rate (FT/FGA) by Team (2014–2023)",
+                y_label="Average FT/FGA (per 100 FGA)",
+                y_lim=(18, 23),
+                sort_ascending=False,
+            )
+        )
+
+# --- Tab 2: Project Walkthrough ---
 with tab2:
-    st.title("Project Writeup & Findings")
-    st.markdown("""
-**Objective:**  
-To determine if the NBA Four Factors (effective field goal %, turnover %, offensive rebound %, and free throw rate) are significant predictors of team wins and playoff appearances.
+    st.title("Project Walkthrough: From Data to Results")
+    st.markdown(
+        """
+This section documents the full end-to-end workflow, from raw data to results.
 
-**Methods:**  
-- Multi Linear Regression for wins
-- Logistic Regression for playoff prediction
-- Statistical tests (t-test, z-test) to compare model vs. baseline
+Two notebooks in this repo mirror the process:
 
-**Key Results:**  
-- The Four Factors explain about 30% of the variance in team wins (R² = 0.30).
-- All Four Factors are statistically significant predictors (p < 0.05).
-- Logistic regression correctly predicted playoff status for 83% of teams in 2024.
-- Both models outperformed their baselines at the 5% significance level.
+- **Data cleaning + EDA** (creates the processed CSVs)
+- **Hypothesis testing + modeling** (fits models, evaluates on 2024, runs significance tests)
+"""
+    )
 
-**Conclusion:**  
-The Four Factors are significant predictors of NBA team success and should be used for performance analysis and prediction.
+    with st.expander("1) Data source & scope", expanded=True):
+        st.markdown(
+            """
+**Dataset**
 
----
-For more details, see the full notebook below.
-""")
+Source: [Kaggle — NBA, ABA & BAA Stats](https://www.kaggle.com/datasets/sumitrodatta/nba-aba-baa-stats)
 
+This project uses **NBA team-level season summaries**.
+
+**Time window**
+
+- Primary analysis window: **2014–2023**
+- Holdout test season: **2024**
+"""
+        )
+
+    with st.expander("2) Data ingestion", expanded=False):
+        st.markdown(
+            """
+The raw CSV was loaded into pandas and filtered to the seasons/rows relevant to the analysis.
+
+Filtering choices:
+
+- keep NBA team rows in the selected seasons
+- drop the `League Average` row
+"""
+        )
+        st.code(
+            '''
+df = pd.read_csv("../data/raw/team_summaries.csv")
+
+teams_14_23 = df[
+    (df["season"] >= 2014)
+    & (df["season"] < 2024)
+    & (df["team"] != "League Average")
+].copy()
+''',
+            language="python",
+        )
+
+    with st.expander("3) Cleaning & preprocessing", expanded=False):
+        st.markdown(
+            """
+Key preprocessing steps:
+
+- **Data quality checks**: looked for duplicates and missing values.
+- **Playoff labels**: corrected playoff flags for seasons where the raw dataset was inconsistent.
+- **Model-ready target**: converted `playoffs` to an integer (1/0).
+- **Feature consistency**: scaled `e_fg_percent` and `ft_fga` so the Four Factors are on comparable “percent-like” scales.
+
+Finally, I saved processed outputs so the Streamlit app and modeling notebook can load clean data instantly.
+"""
+        )
+        st.code(
+            '''
+teams_14_23.to_csv("../data/processed/teams_14_23.csv", index=False)
+teams_24.to_csv("../data/processed/teams_24.csv", index=False)
+''',
+            language="python",
+        )
+
+    with st.expander("4) EDA (exploratory data analysis)", expanded=False):
+        st.markdown(
+            """
+In EDA, I focused on two things:
+
+1) understanding the distribution of wins and Four Factors by team
+2) sanity-checking that the numbers looked realistic before modeling
+
+The dropdown charts in Tab 1 are a condensed version of that exploration.
+"""
+        )
+
+    with st.expander("5) Modeling", expanded=False):
+        st.markdown(
+            """
+I built two models because the outcomes are different types:
+
+**A) Predict wins (continuous target)**
+
+- Model: Multiple Linear Regression (OLS)
+- Target: `w`
+
+**B) Predict playoffs (binary target)**
+
+- Model: Logistic Regression
+- Target: `playoffs` (1/0)
+
+Features for both models:
+
+- `e_fg_percent`, `tov_percent`, `orb_percent`, `ft_fga`
+
+Train/evaluate split:
+
+- Train on 2014–2023
+- Evaluate on 2024
+"""
+        )
+        st.code(
+            '''
+FEATURES = ["e_fg_percent", "tov_percent", "orb_percent", "ft_fga"]
+
+# Wins regression
+X_train = teams_14_23[FEATURES]
+y_train = teams_14_23["w"]
+
+# Playoff classification
+X_train = teams_14_23[FEATURES]
+y_train = teams_14_23["playoffs"]
+''',
+            language="python",
+        )
+
+    with st.expander("6) Evaluation + hypothesis testing", expanded=False):
+        st.markdown(
+            """
+I evaluated on the 2024 holdout season using standard metrics.
+
+To strengthen the conclusion, I also compared each model against a simple baseline and ran a statistical test:
+
+- **Wins**: compared absolute errors vs a baseline that predicts the mean wins for every team; used a one-sample t-test on error differences.
+- **Playoffs**: compared accuracy vs a baseline; used a proportions z-test.
+"""
+        )
+
+    with st.expander("7) Results (holdout 2024)", expanded=True):
+        st.markdown(
+            """
+**Wins model**
+
+- RMSE ≈ **11.0**
+- $R^2$ ≈ **0.30**
+- Baseline comparison (t-test): p-value ≈ **0.034**
+
+**Playoff model**
+
+- Accuracy ≈ **0.83**
+- Baseline comparison (z-test): p-value ≈ **0.006**
+
+Overall: in this dataset/time window, the Four Factors show up as statistically significant predictors of both wins and playoff success.
+"""
+        )
+
+    with st.expander("8) Limitations & future improvements", expanded=False):
+        st.markdown(
+            """
+Limitations:
+
+- Team-season data compresses a lot of information (pace, injuries, roster changes)
+- The Four Factors are correlated with each other and with other team metrics
+- Expand the test set to multiple seasons for more robust evaluation
+
+Future improvements:
+
+- Evaluate with rolling seasons (time-series style validation)
+- Add defensive Four Factors (opponent stats)
+- Add calibration/ROC for the playoff classifier
+"""
+        )
+
+# --- Tab 3: More & Contact ---
 with tab3:
-    st.title("Full Notebook & Code")
+    st.title("More & Contact")
     st.markdown("""
-- [View the full project on GitHub](https://github.com/jackewings/nba-four-factors/tree/main)
+- [View the full project repo](https://github.com/jackewings/nba-four-factors)
+- Notebooks: [Data Cleaning + EDA](https://github.com/jackewings/nba-four-factors/blob/main/notebooks/data_cleaning_eda.ipynb) | [Hypothesis Testing](https://github.com/jackewings/nba-four-factors/blob/main/notebooks/hypothesis_testing.ipynb)
+- [Connect on LinkedIn](https://www.linkedin.com/in/jack-ewings-profile/)
+- GitHub: [@jackewings](https://github.com/jackewings)
 """)
