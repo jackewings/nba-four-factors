@@ -12,11 +12,11 @@ st.set_page_config(page_title="NBA Four Factors Analysis", layout="wide")
 # --- Load Clean Processed Data ---
 @st.cache_data
 def load_teams_14_23():
-    return pd.read_csv("../data/processed/teams_14_23.csv")
+    return pd.read_csv("data/processed/teams_14_23.csv")
 
 @st.cache_data
 def load_teams_24():
-    return pd.read_csv("../data/processed/teams_24.csv")
+    return pd.read_csv("data/processed/teams_24.csv")
 
 teams_14_23 = load_teams_14_23()
 teams_24 = load_teams_24()
@@ -129,6 +129,5 @@ For more details, see the full notebook below.
 with tab3:
     st.title("Full Notebook & Code")
     st.markdown("""
-- [View the full Jupyter notebook on GitHub](https://github.com/yourusername/nba-four-factors/blob/main/notebooks/four_factors_analysis.ipynb)
-- [Download the notebook](https://github.com/yourusername/nba-four-factors/raw/main/notebooks/four_factors_analysis.ipynb)
+- [View the full project on GitHub](https://github.com/jackewings/nba-four-factors/tree/main)
 """)
