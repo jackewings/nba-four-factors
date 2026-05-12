@@ -8,7 +8,7 @@ A portfolio project exploring how the NBA's Four Factors relate to team wins and
 
 This project investigates whether the "Four Factors" of basketball — Effective Field Goal Percentage (eFG%), Turnover Percentage (TOV%), Offensive Rebound Percentage (ORB%), and Free Throw Rate (FT/FGA) — are statistically significant predictors of NBA team wins and playoff appearances in the modern era.
 
-The analysis is presented as an interactive [Streamlit](https://streamlit.io/) web app, with:
+The analysis is presented as an interactive [Streamlit web app](https://nba-four-factors-analysis.streamlit.app/), with:
 - **Background & Visuals:** Explanation of the Four Factors and interactive charts by team
 - **Project Walkthrough:** Step-by-step breakdown of the data pipeline, modeling, and results
 - **More & Contact:** Links to notebooks, LinkedIn, and GitHub
